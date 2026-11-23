@@ -1,0 +1,147 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://boat/boat.gd" id="1_boat"]
+[ext_resource type="Script" path="res://boat/hull_mesh.gd" id="2_hull"]
+[ext_resource type="Script" path="res://boat/sail_mesh.gd" id="3_sail"]
+
+[sub_resource type="StandardMaterial3D" id="mat_cream"]
+albedo_color = Color(0.97, 0.95, 0.9, 1)
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="mat_wood"]
+albedo_color = Color(0.62, 0.42, 0.27, 1)
+roughness = 0.7
+
+[sub_resource type="StandardMaterial3D" id="mat_dark"]
+albedo_color = Color(0.22, 0.24, 0.3, 1)
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="mat_red"]
+albedo_color = Color(0.9, 0.36, 0.3, 1)
+roughness = 0.5
+
+[sub_resource type="StandardMaterial3D" id="mat_metal"]
+albedo_color = Color(0.82, 0.83, 0.86, 1)
+metallic = 0.4
+roughness = 0.35
+
+[sub_resource type="BoxMesh" id="mesh_cabin"]
+material = SubResource("mat_cream")
+size = Vector3(1.2, 0.45, 1.8)
+
+[sub_resource type="BoxMesh" id="mesh_hatch"]
+material = SubResource("mat_wood")
+size = Vector3(0.6, 0.06, 0.7)
+
+[sub_resource type="BoxMesh" id="mesh_keel"]
+material = SubResource("mat_dark")
+size = Vector3(0.1, 0.9, 0.8)
+
+[sub_resource type="CapsuleMesh" id="mesh_bulb"]
+material = SubResource("mat_dark")
+radius = 0.16
+height = 1.1
+
+[sub_resource type="CylinderMesh" id="mesh_mast"]
+material = SubResource("mat_metal")
+top_radius = 0.045
+bottom_radius = 0.065
+height = 7.0
+radial_segments = 12
+
+[sub_resource type="CylinderMesh" id="mesh_boom"]
+material = SubResource("mat_metal")
+top_radius = 0.05
+bottom_radius = 0.05
+height = 2.8
+radial_segments = 10
+
+[sub_resource type="BoxMesh" id="mesh_blade"]
+material = SubResource("mat_dark")
+size = Vector3(0.06, 1.0, 0.45)
+
+[sub_resource type="BoxMesh" id="mesh_tiller"]
+material = SubResource("mat_wood")
+size = Vector3(0.06, 0.06, 1.1)
+
+[sub_resource type="BoxMesh" id="mesh_windex_shaft"]
+material = SubResource("mat_dark")
+size = Vector3(0.025, 0.025, 0.6)
+
+[sub_resource type="CylinderMesh" id="mesh_windex_tip"]
+material = SubResource("mat_red")
+top_radius = 0.0
+bottom_radius = 0.06
+height = 0.16
+radial_segments = 8
+
+[sub_resource type="BoxMesh" id="mesh_windex_fin"]
+material = SubResource("mat_red")
+size = Vector3(0.01, 0.14, 0.14)
+
+[node name="Boat" type="Node3D"]
+script = ExtResource("1_boat")
+
+[node name="Hull" type="MeshInstance3D" parent="."]
+script = ExtResource("2_hull")
+
+[node name="Cabin" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.78, 0.45)
+mesh = SubResource("mesh_cabin")
+
+[node name="Hatch" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24, 0.4)
+mesh = SubResource("mesh_hatch")
+
+[node name="Keel" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.75, 0)
+mesh = SubResource("mesh_keel")
+
+[node name="KeelBulb" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, -1.2, 0.05)
+mesh = SubResource("mesh_bulb")
+
+[node name="Mast" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.1, 0)
+mesh = SubResource("mesh_mast")
+
+[node name="BoomPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="Boom" type="MeshInstance3D" parent="BoomPivot"]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0, 1.4)
+mesh = SubResource("mesh_boom")
+
+[node name="MainSail" type="MeshInstance3D" parent="."]
+script = ExtResource("3_sail")
+
+[node name="Jib" type="MeshInstance3D" parent="."]
+script = ExtResource("3_sail")
+color = Color(0.98, 0.93, 0.84, 1)
+
+[node name="RudderPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 2.8)
+
+[node name="Blade" type="MeshInstance3D" parent="RudderPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0.18)
+mesh = SubResource("mesh_blade")
+
+[node name="Tiller" type="MeshInstance3D" parent="RudderPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.5)
+mesh = SubResource("mesh_tiller")
+
+[node name="Windex" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.7, 0)
+
+[node name="Shaft" type="MeshInstance3D" parent="Windex"]
+mesh = SubResource("mesh_windex_shaft")
+
+[node name="Tip" type="MeshInstance3D" parent="Windex"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, -0.32)
+mesh = SubResource("mesh_windex_tip")
+
+[node name="Fin" type="MeshInstance3D" parent="Windex"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.3)
+mesh = SubResource("mesh_windex_fin")
+
+[node name="Rigging" type="MeshInstance3D" parent="."]

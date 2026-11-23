@@ -1,0 +1,131 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://main.gd" id="1_main"]
+[ext_resource type="Shader" path="res://world/water.gdshader" id="2_water_shader"]
+[ext_resource type="Script" path="res://world/water.gd" id="3_water"]
+[ext_resource type="PackedScene" path="res://boat/boat.tscn" id="4_boat"]
+[ext_resource type="Script" path="res://world/buoy.gd" id="5_buoy"]
+[ext_resource type="Script" path="res://camera/orbit_camera.gd" id="6_camera"]
+[ext_resource type="Script" path="res://debug/force_overlay.gd" id="7_overlay"]
+[ext_resource type="Script" path="res://ui/hud.gd" id="8_hud"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
+sky_top_color = Color(0.38, 0.64, 0.88, 1)
+sky_horizon_color = Color(0.8, 0.89, 0.94, 1)
+ground_bottom_color = Color(0.18, 0.42, 0.56, 1)
+ground_horizon_color = Color(0.8, 0.89, 0.94, 1)
+sun_angle_max = 20.0
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_mat")
+
+[sub_resource type="Environment" id="env"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_color = Color(0.95, 0.92, 0.86, 1)
+ambient_light_sky_contribution = 0.55
+ambient_light_energy = 0.9
+tonemap_mode = 2
+fog_enabled = true
+fog_light_color = Color(0.8, 0.89, 0.94, 1)
+fog_density = 0.0012
+fog_sky_affect = 0.0
+
+[sub_resource type="ShaderMaterial" id="water_mat"]
+render_priority = 0
+shader = ExtResource("2_water_shader")
+
+[sub_resource type="PlaneMesh" id="water_mesh"]
+material = SubResource("water_mat")
+size = Vector2(3000, 3000)
+
+[sub_resource type="StandardMaterial3D" id="mat_sand"]
+albedo_color = Color(0.93, 0.84, 0.62, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="mat_grass"]
+albedo_color = Color(0.45, 0.72, 0.38, 1)
+roughness = 0.85
+
+[sub_resource type="SphereMesh" id="mesh_island_sand"]
+material = SubResource("mat_sand")
+radius = 60.0
+height = 40.0
+
+[sub_resource type="SphereMesh" id="mesh_island_grass"]
+material = SubResource("mat_grass")
+radius = 42.0
+height = 56.0
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8192, 0, -0.5736, -0.4394, 0.6428, -0.6275, 0.3687, 0.766, 0.5265, 0, 50, 0)
+light_color = Color(1, 0.96, 0.88, 1)
+light_energy = 1.25
+shadow_enabled = true
+directional_shadow_max_distance = 120.0
+
+[node name="Water" type="MeshInstance3D" parent="." node_paths=PackedStringArray("target")]
+mesh = SubResource("water_mesh")
+script = ExtResource("3_water")
+target = NodePath("../Boat")
+
+[node name="Boat" parent="." instance=ExtResource("4_boat")]
+
+[node name="Buoys" type="Node3D" parent="."]
+
+[node name="Windward" type="Node3D" parent="Buoys"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -150)
+script = ExtResource("5_buoy")
+
+[node name="East" type="Node3D" parent="Buoys"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 0, -60)
+script = ExtResource("5_buoy")
+color = Color(0.9, 0.3, 0.28, 1)
+
+[node name="West" type="Node3D" parent="Buoys"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -120, 0, -60)
+script = ExtResource("5_buoy")
+color = Color(0.3, 0.75, 0.4, 1)
+
+[node name="Leeward" type="Node3D" parent="Buoys"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 90)
+script = ExtResource("5_buoy")
+
+[node name="Islands" type="Node3D" parent="."]
+
+[node name="NorthEast" type="MeshInstance3D" parent="Islands"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 320, -12, -460)
+mesh = SubResource("mesh_island_sand")
+
+[node name="Grass" type="MeshInstance3D" parent="Islands/NorthEast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mesh = SubResource("mesh_island_grass")
+
+[node name="SouthWest" type="MeshInstance3D" parent="Islands"]
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, -480, -10, 260)
+mesh = SubResource("mesh_island_sand")
+
+[node name="Grass" type="MeshInstance3D" parent="Islands/SouthWest"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mesh = SubResource("mesh_island_grass")
+
+[node name="Camera" type="Camera3D" parent="." node_paths=PackedStringArray("target")]
+current = true
+fov = 60.0
+far = 3000.0
+script = ExtResource("6_camera")
+target = NodePath("../Boat")
+
+[node name="ForceOverlay" type="MeshInstance3D" parent="." node_paths=PackedStringArray("boat")]
+script = ExtResource("7_overlay")
+boat = NodePath("../Boat")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("8_hud")
