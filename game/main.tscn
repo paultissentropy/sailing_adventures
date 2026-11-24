@@ -10,6 +10,9 @@
 [ext_resource type="Script" path="res://ui/hud.gd" id="8_hud"]
 [ext_resource type="Script" path="res://world/wake.gd" id="9_wake"]
 [ext_resource type="Script" path="res://world/wind_streaks.gd" id="10_streaks"]
+[ext_resource type="Script" path="res://debug/recorder.gd" id="11_recorder"]
+[ext_resource type="Script" path="res://world/bow_wave.gd" id="12_bow_wave"]
+[ext_resource type="Script" path="res://world/flotsam.gd" id="13_flotsam"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
 sky_top_color = Color(0.38, 0.64, 0.88, 1)
@@ -129,6 +132,14 @@ target = NodePath("../Boat")
 script = ExtResource("9_wake")
 boat = NodePath("../Boat")
 
+[node name="BowWave" type="MeshInstance3D" parent="." node_paths=PackedStringArray("boat")]
+script = ExtResource("12_bow_wave")
+boat = NodePath("../Boat")
+
+[node name="Flotsam" type="MultiMeshInstance3D" parent="." node_paths=PackedStringArray("boat")]
+script = ExtResource("13_flotsam")
+boat = NodePath("../Boat")
+
 [node name="WindStreaks" type="MeshInstance3D" parent="." node_paths=PackedStringArray("boat", "camera")]
 script = ExtResource("10_streaks")
 boat = NodePath("../Boat")
@@ -136,6 +147,10 @@ camera = NodePath("../Camera")
 
 [node name="ForceOverlay" type="MeshInstance3D" parent="." node_paths=PackedStringArray("boat")]
 script = ExtResource("7_overlay")
+boat = NodePath("../Boat")
+
+[node name="Recorder" type="Node" parent="." node_paths=PackedStringArray("boat")]
+script = ExtResource("11_recorder")
 boat = NodePath("../Boat")
 
 [node name="HUD" type="CanvasLayer" parent="."]

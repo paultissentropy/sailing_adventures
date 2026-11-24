@@ -49,7 +49,7 @@ func _process(delta: float) -> void:
 	var origin := boat.get_global_transform_interpolated().origin
 	var f := sim.forward()
 	var fwd := Vector3(f.x, 0.0, f.y)
-	var stern := Vector3(origin.x, Y, origin.z) - fwd * STERN_OFFSET
+	var stern := Vector3(origin.x, Y, origin.z) - fwd * STERN_OFFSET * boat.model_scale()
 	if _timer >= SAMPLE_PERIOD:
 		_timer = 0.0
 		_points.append(stern)
@@ -108,7 +108,7 @@ func _wake_color(i: int) -> Color:
 
 
 func _width(i: int) -> float:
-	return 0.35 + 1.6 * _age_ratio(i)
+	return (0.35 + 1.6 * _age_ratio(i)) * boat.model_scale()
 
 
 func _quad(a0: Vector3, a1: Vector3, b0: Vector3, b1: Vector3, ca: Color, cb: Color) -> void:

@@ -3,6 +3,8 @@ extends Node3D
 
 const WIND_STEP_DEG := 15.0
 const WIND_STEP_KN := 2.0
+## Bateaux disponibles (touche B pour changer).
+const BOATS := [preload("res://boats/quillard_6m.tres"), preload("res://boats/croiseur_9m.tres")]
 
 @export var wind: WindField
 
@@ -12,17 +14,21 @@ const WIND_STEP_KN := 2.0
 @onready var _overlay: ForceOverlay = $ForceOverlay
 @onready var _camera: OrbitCamera = $Camera
 @onready var _wake: Wake = $Wake
+@onready var _recorder: Recorder = $Recorder
+
+var _boat_index := 0
 
 
 func _ready() -> void:
 	if wind == null:
 		wind = WindField.new()
 	_boat.wind = wind
-	_boat.reset()
+	_boat.set_params(BOATS[_boat_index])
 	var buoys: Array[Node3D] = []
 	for buoy in $Buoys.get_children():
 		buoys.append(buoy)
 	_hud.setup(_boat, wind, _camera, buoys)
+	_hud.recorder = _recorder
 	_overlay.visible = "--debug" in OS.get_cmdline_user_args()
 
 
@@ -48,6 +54,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		_boat.reset()
 		_overlay.clear_trail()
 		_wake.clear()
+	elif event.is_action_pressed("boat_switch"):
+		_boat_index = (_boat_index + 1) % BOATS.size()
+		_boat.set_params(BOATS[_boat_index])
+		_overlay.clear_trail()
+		_wake.clear()
+	elif event.is_action_pressed("record_toggle"):
+		_recorder.toggle()
 	elif event.is_action_pressed("instruments_toggle"):
 		_hud.toggle_instruments()
 	elif event.is_action_pressed("debug_toggle"):

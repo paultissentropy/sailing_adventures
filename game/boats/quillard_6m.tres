@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="BoatParams" format=3]
+
+[ext_resource type="Script" path="res://sim/boat_params.gd" id="1_params"]
+
+[resource]
+script = ExtResource("1_params")
+display_name = "Quillard 6 m"
+length = 6.0
+visual_scale = 1.0

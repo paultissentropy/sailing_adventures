@@ -5,6 +5,13 @@ extends Resource
 ## Les positions `*_x` sont mesurées vers l'avant depuis le centre de dérive (la quille).
 ## Vérifier la polaire (`tools/polar.sh`) après chaque modification.
 
+@export_group("Bateau")
+@export var display_name := "Quillard 6 m"
+## Longueur hors tout (m).
+@export var length := 6.0
+## Échelle du modèle 3D (conçu pour 6 m) : 1,5 pour un bateau de 9 m.
+@export var visual_scale := 1.0
+
 @export_group("Masse et inertie")
 @export var mass := 1100.0
 ## Masse ajoutée (fraction de la masse) en avançant / en glissant sur le côté.
@@ -21,6 +28,8 @@ extends Resource
 @export var hull_speed := 2.9
 @export var hull_drag := 21.0
 @export var wave_drag := 3.0
+## La carène freine davantage en marche arrière (tableau, safran à l'envers).
+@export var reverse_drag_factor := 3.0
 @export var hull_side_linear := 300.0
 @export var hull_side_quad := 900.0
 @export var yaw_damping_linear := 400.0
@@ -47,6 +56,8 @@ extends Resource
 @export var rudder_stall_deg := 20.0
 @export var rudder_cd0 := 0.012
 @export var rudder_k_induced := 0.08
+## Mode barre seule : traînée du safran à fond de barre (coefficient ajouté à `rudder_cd0`).
+@export var rudder_brake := 0.15
 
 @export_group("Gréement")
 @export var mast_x := 0.0
@@ -67,11 +78,14 @@ extends Resource
 @export var sail_cd0 := 0.08
 @export var sail_k_induced := 0.1
 ## Traînée supplémentaire d'une voile qui faseye (elle bat au vent).
-@export var sail_flutter_cd := 0.25
+@export var sail_flutter_cd := 0.12
 ## Le vent doit passer de ce nombre de degrés « sous la bôme » avant qu'elle bascule.
 @export var by_the_lee_deg := 12.0
 ## Si vrai, le foc passe tout seul sous le vent : il n'est jamais à contre.
+## Si faux : « larguer pour passer ». Tant que l'écoute en service est bordée, le foc
+## reste à contre ; une fois choquée au-delà de `jib_release_sheet`, il passe.
 @export var auto_jib := true
+@export_range(0.0, 1.0) var jib_release_sheet := 0.6
 
 @export_group("Simplifications (jouabilité)")
 ## Les voiles voient le vent apparent (sinon : vent réel seul).
@@ -83,8 +97,8 @@ extends Resource
 ## Vent réel seul : la portance des voiles s'éteint sous `pointing_min_deg` du vent et
 ## n'est pleine qu'au-delà de `pointing_full_deg`. Remplace l'effet du vent apparent
 ## qui, en vrai, empêche de remonter trop près du vent.
-@export var pointing_min_deg := 30.0
-@export var pointing_full_deg := 48.0
+@export var pointing_min_deg := 28.0
+@export var pointing_full_deg := 42.0
 ## Barre seule : vitesse de rotation à fond de barre (°/s) et vitesse à partir de
 ## laquelle la barre a tout son effet (m/s).
 @export var turn_rate_max_deg := 20.0

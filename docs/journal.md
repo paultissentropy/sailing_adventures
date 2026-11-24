@@ -6,15 +6,108 @@ Le backlog, tenu à jour, est en premier.
 ## Backlog
 
 - **Punir l'empannage non contrôlé** (relevé au test du 24/11). Le passage de la bôme
-  fonctionne déjà. À ajouter : casse, forte perte de vitesse ou coup de gîte quand on
-  empanne GV choquée par vent soutenu. Rien d'implémenté pour l'instant.
+  fonctionne, et le banc d'essai mesure déjà sa course (170° GV choquée, contre 20° GV
+  bordée). À ajouter : casse, forte perte de vitesse ou coup de gîte.
+- **Activer « larguer pour passer »** pour le foc : codé et testé, désactivé en jeu
+  (`auto_jib = false`).
 - **Réintroduire les concepts un par un**, comme leçons de l'aventure : vent apparent,
-  dérive, équilibre des voiles (loffée et abattée), foc manuel (foc à contre),
-  risées. Chacun a déjà son réglage dans `BoatParams`.
+  dérive, équilibre des voiles (loffée et abattée), foc manuel, risées. Chacun a déjà
+  son réglage dans `BoatParams`.
+- **Effets de vitesse, suite** : effet caméra (champ de vision, léger tangage), son
+  (eau sur la coque, vent, battement des voiles).
 - **P1** : risées visibles sur l'eau, île avec dévent et accélération dans les passes.
 - **Collisions** avec les bouées et les îles.
 - **Cartes** et navigation (relèvements sur la carte).
+- Un vrai modèle 3D par bateau (P2).
 - Retirer peu à peu l'interface chiffrée au profit du ressenti (voir [vision.md](vision.md)).
+
+## 2026-11-24 (suite) — Prototype P0.2
+
+Développé sur la branche locale `p0.2`, créée à partir de `prototype-p0`.
+
+### Retours du test de la P0.1
+
+- Le foc « reste du même côté, ou passe sans qu'on comprenne ». À terme, on veut le
+  faire passer soi-même avec la mécanique « larguer pour passer », mais plus tard.
+- On n'est pas assez marin pour juger la physique : il faut un moyen objectif.
+- Question : à partir de quel angle le bateau est-il bout au vent ?
+- On ne sent pas la vitesse.
+- Demandes : un croiseur de 7 à 10 m en plus du quillard, et une vue plus « cockpit ».
+
+### Réponses
+
+- **Bout au vent** : voir [references-bateaux.md](references-bateaux.md). Les voiles ne
+  portent plus sous 28° du vent réel ; la poussée revient progressivement jusqu'à 40-42°.
+  À 30°, le quillard ne fait plus que 0,5 nœud.
+- **Comparaison avec un croiseur de 7-10 m** : le croiseur 9 m du jeu a été réglé sur
+  des ordres de grandeur de croiseurs de série (vitesses, rotation, erre, gîte). Les
+  deux bateaux sont mesurés par le banc d'essai. Ce qui manque encore pour un vrai
+  croiseur, c'est surtout ce qu'on a volontairement retiré (vent apparent, dérive,
+  ardeur, foc à contre, vagues).
+
+### Réalisé
+
+- **Foc** :
+  - cause du problème : écoute bordée, le foc ne s'écartait de l'axe que de quelques
+    degrés au passage, et au portant il suivait sa propre règle au lieu de la bôme.
+    Maintenant, il se plaque aussitôt sur son nouveau bord et suit la bôme au portant ;
+  - le passage se voit : les voiles battent dans le lit du vent, un message
+    « Le foc passe à… » apparaît, l'étiquette de la jauge s'allume ;
+  - « larguer pour passer » est codé et testé, désactivé en jeu.
+- **Deux bateaux** (touche B) : quillard 6 m et croiseur 9 m (préréglages
+  `game/boats/`), un seul modèle 3D mis à l'échelle.
+- **Banc d'essai** (`tools/bench.sh` → [banc-essai.md](banc-essai.md)) et
+  **références** ([references-bateaux.md](references-bateaux.md)).
+- **Enregistreur de partie** (F3) et **analyse** (`tools/analyse_partie.py`) ; partie
+  de démonstration `game/tests/record_demo.gd`.
+- **Effets de vitesse** : moustache d'étrave, gerbes d'écume, repères flottants (écume,
+  algues, brindilles, plumes), sillage proportionné au bateau.
+- **Vue cockpit** (touche V).
+
+### Corrections de physique trouvées grâce au banc d'essai
+
+- Trop près du vent, les voiles gardaient la traînée liée à la portance alors que la
+  portance était coupée : elles freinaient comme si elles portaient. Elles se
+  comportent maintenant comme des voiles qui faseyent.
+- En mode « barre seule », le safran freinait comme un vrai safran braqué à 25-35°
+  (environ 800 N sur le croiseur). Il garde un freinage simple, proportionnel à la
+  barre (`rudder_brake`).
+- Le bateau reculait jusqu'à 5 nœuds bout au vent par 20 nœuds de vent : la carène
+  freine maintenant 3 fois plus en marche arrière.
+- La grand-voile déventait trop le foc au vent arrière.
+- Zone vent debout resserrée : 28° → 42° (quillard) et 28° → 40° (croiseur), au lieu
+  de 30° → 48°.
+- Traînée de faseyement ramenée de 0,25 à 0,12 : plus d'erre en virement. L'arrêt bout
+  au vent reste net : 2,5 longueurs pour le quillard, contre 2,2 avant.
+
+### Résultats (10 nœuds de vent)
+
+| Mesure | Quillard 6 m | Croiseur 9 m |
+|---|---|---|
+| Près (50°) / travers / vent arrière | 4,9 / 5,3 / 3,6 nœuds | 5,7-5,9 / 6,3 / 3,8-4,0 nœuds |
+| Meilleur angle de remontée | 42° | 40° |
+| Rotation barre à fond | 20°/s | 12,9°/s |
+| Virement (barre à 70 %) : durée, perte | 7,7 s, 56 % | 12,1 s, 56 % |
+| Arrêt bout au vent | 2,5 longueurs | 3,2 longueurs |
+
+Banc d'essai : 26 mesures sur 28 dans les fourchettes. Les deux hors fourchette sont la
+perte de vitesse au virement, 55,6 % pour un maximum de 55 % : à la limite haute.
+72 vérifications sur 72 réussies (36 par bateau). La scène tourne sans erreur.
+Captures vérifiées : vue cockpit, croiseur avec moustache d'étrave
+([img/capture-cockpit.png](img/capture-cockpit.png),
+[img/capture-croiseur.png](img/capture-croiseur.png)).
+
+### Limites connues
+
+- La perte de vitesse au virement est à la limite haute : le jeu punit un peu les
+  virements lents. À juger en jouant.
+- Les fourchettes de référence sont des ordres de grandeur, pas des mesures.
+- Les repères flottants restent discrets, car l'eau a déjà des crêtes blanches.
+- Le sillage reste une bande assez uniforme.
+- Sur le compas de relèvement, les étiquettes « vent » et « Bd » se chevauchent quand
+  elles coïncident.
+- Pas encore testé en jeu : le passage du foc, le croiseur et la vue cockpit restent
+  à juger au ressenti.
 
 ## 2026-11-24 — Retours du premier test, prototype P0.1
 

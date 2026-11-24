@@ -39,6 +39,9 @@ var jib_side := 1.0
 ## Barre : -1..1, positif = le bateau vire vers tribord.
 var rudder := 0.0
 
+## Nombre de fois où le foc a changé de bord (l'interface s'en sert pour le signaler).
+var jib_switches := 0
+
 ## Outils : cap bloqué (polaire, mesures d'équilibre).
 var lock_heading := false
 
@@ -165,17 +168,15 @@ func _substep(dt: float) -> void:
 
 	var main_chord := Vector2(-cos(main_angle), sin(main_angle))
 	main_alpha = Foil.incidence(flow, main_chord)
-	var cm := _sail_coefficients(main_alpha, stall)
-	cm.x *= pointing
+	var cm := _sail_coefficients(main_alpha, stall, pointing)
 	_add("main", Vector2(p.mast_x, ce_y) + main_chord * (p.boom_length * 0.35),
 		(Foil.lift_direction(flow, main_chord) * cm.x + flow * cm.y) * (q_air * p.main_area * heel_eff))
 
 	var jib_chord := Vector2(-cos(jib_angle), sin(jib_angle))
 	jib_alpha = Foil.incidence(flow, jib_chord)
-	var cj := _sail_coefficients(jib_alpha, stall)
-	cj.x *= pointing
+	var cj := _sail_coefficients(jib_alpha, stall, pointing)
 	# Au portant, la grand-voile dévente le foc.
-	var shadow := 1.0 - 0.8 * smoothstep(deg_to_rad(130.0), deg_to_rad(170.0), absf(free_angle))
+	var shadow := 1.0 - 0.5 * smoothstep(deg_to_rad(130.0), deg_to_rad(170.0), absf(free_angle))
 	_add("jib", Vector2(p.jib_tack_x, ce_y * 0.8) + jib_chord * (p.jib_foot * 0.35),
 		(Foil.lift_direction(flow, jib_chord) * cj.x + flow * cj.y) * (q_air * p.jib_area * heel_eff * shadow))
 
@@ -188,13 +189,21 @@ func _substep(dt: float) -> void:
 		p.keel_cl_max, p.keel_stall_deg, p.keel_cd0, p.keel_k_induced))
 
 	var delta := rudder_angle()
-	_add("rudder", Vector2(p.rudder_x, 0.0), _water_foil(
-		Vector2(u, v - yaw_rate * p.rudder_x), Vector2(-cos(delta), sin(delta)), p.rudder_area * cos_heel,
-		p.rudder_cl_max, p.rudder_stall_deg, p.rudder_cd0, p.rudder_k_induced))
+	if p.sail_yaw_effects:
+		_add("rudder", Vector2(p.rudder_x, 0.0), _water_foil(
+			Vector2(u, v - yaw_rate * p.rudder_x), Vector2(-cos(delta), sin(delta)), p.rudder_area * cos_heel,
+			p.rudder_cl_max, p.rudder_stall_deg, p.rudder_cd0, p.rudder_k_induced))
+	else:
+		# La barre seule fait tourner : le safran ne compte plus que pour son freinage,
+		# d'autant plus fort qu'on met de barre.
+		var cd := p.rudder_cd0 + p.rudder_brake * rudder * rudder
+		_add("rudder", Vector2(p.rudder_x, 0.0), Vector2(-signf(u) * 0.5 * RHO_WATER * u * u * p.rudder_area * cd, 0.0))
 
 	var ratio := absf(u) / p.hull_speed
 	var heel_drag := 1.0 + 0.5 * pow(sin(heel), 2.0)
 	var hull_u := -signf(u) * p.hull_drag * u * u * (1.0 + p.wave_drag * pow(ratio, 4.0)) * heel_drag
+	if u < 0.0:
+		hull_u *= p.reverse_drag_factor
 	var hull_v := -p.hull_side_linear * v - p.hull_side_quad * v * absf(v)
 	_add("hull", Vector2.ZERO, Vector2(hull_u, hull_v))
 
@@ -253,15 +262,28 @@ func _update_sail_angles(aws: float, dt: float) -> void:
 	main_angle = _swing(main_angle, main_target, aws, dt)
 
 	if p.auto_jib:
-		var auto_side := signf(_flag_for_side(free_angle, signf(jib_angle)))
-		if auto_side != 0.0:
-			jib_side = auto_side
+		# Au près, le foc passe dès que le vent traverse l'étrave ; au portant, il suit la
+		# bôme, pour que les deux voiles changent de bord ensemble à l'empannage.
+		var auto_side := signf(free_angle)
+		if absf(free_angle) > PI * 0.5 and main_angle != 0.0:
+			auto_side = signf(main_angle)
+		if auto_side != 0.0 and auto_side != jib_side:
+			_switch_jib(auto_side)
+	elif signf(_flag_for_side(free_angle, jib_side)) == -jib_side and jib_sheet >= p.jib_release_sheet:
+		# « Larguer pour passer » : l'écoute en service est larguée, le vent pousse le foc
+		# de l'autre bord. L'autre écoute prend le relais, encore molle : il faut la border.
+		_switch_jib(-jib_side)
+		jib_sheet = 1.0
 	var side := jib_side
 	var jib_flag := _flag_for_side(free_angle, side)
 	var jib_target: float
 	if signf(jib_flag) == side or jib_flag == 0.0:
 		var jib_limit := deg_to_rad(lerpf(p.jib_min_deg, p.jib_max_deg, jib_sheet))
-		jib_target = side * minf(absf(jib_flag), jib_limit)
+		var free := absf(jib_flag)
+		if p.auto_jib:
+			# Il se plaque tout de suite sur son nouveau bord : le passage se voit.
+			free = maxf(free, deg_to_rad(p.jib_min_deg))
+		jib_target = side * minf(free, jib_limit)
 	else:
 		# Le vent pousse le foc vers l'autre bord : l'écoute en service le retient.
 		# Bordée, elle le garde au vent (foc à contre) ; choquée, elle le laisse passer.
@@ -276,6 +298,11 @@ func _update_sail_angles(aws: float, dt: float) -> void:
 	jib_angle = _swing(jib_angle, jib_target, aws, dt)
 
 
+func _switch_jib(side: float) -> void:
+	jib_side = side
+	jib_switches += 1
+
+
 ## Angle du drapeau vu depuis le bord `side` : tant que le vent n'est pas assez
 ## « sous la bôme », la voile reste de son bord (pas d'empannage au moindre écart).
 func _flag_for_side(flag: float, side: float) -> float:
@@ -287,9 +314,15 @@ func _flag_for_side(flag: float, side: float) -> float:
 
 
 ## Coefficients d'une voile ; une voile qui faseye bat au vent et freine.
-func _sail_coefficients(alpha: float, stall: float) -> Vector2:
+## `pointing` (0..1) : trop près du vent, la voile ne porte plus et se comporte comme
+## une voile qui faseye (portance et traînée induite retirées, battement ajouté).
+func _sail_coefficients(alpha: float, stall: float, pointing: float = 1.0) -> Vector2:
 	var c := Foil.coefficients(alpha, p.sail_cl_max, stall, p.sail_cd0, p.sail_k_induced)
-	c.y += p.sail_flutter_cd * (1.0 - smoothstep(0.0, deg_to_rad(8.0), alpha))
+	var induced := p.sail_k_induced * c.x * c.x
+	c.x *= pointing
+	c.y -= induced * (1.0 - pointing * pointing)
+	var luffing := maxf(1.0 - smoothstep(0.0, deg_to_rad(8.0), alpha), 1.0 - pointing)
+	c.y += p.sail_flutter_cd * luffing
 	return c
 
 

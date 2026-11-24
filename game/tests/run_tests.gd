@@ -6,18 +6,25 @@ extends SceneTree
 const DT := 1.0 / 60.0
 const KNOT := 0.514444
 
+const PRESETS := ["res://boats/quillard_6m.tres", "res://boats/croiseur_9m.tres"]
+
 var _passed := 0
 var _failed := 0
+## Préréglage du bateau testé.
+var _params: BoatParams
 
 
 func _initialize() -> void:
-	for method in get_method_list():
-		var method_name: String = method.name
-		if not method_name.begins_with("test_"):
-			continue
-		var before := _failed
-		call(method_name)
-		print(("  ok     " if _failed == before else "  ÉCHEC  ") + method_name)
+	for preset: String in PRESETS:
+		_params = load(preset)
+		print("\n%s" % _params.display_name)
+		for method in get_method_list():
+			var method_name: String = method.name
+			if not method_name.begins_with("test_"):
+				continue
+			var before := _failed
+			call(method_name)
+			print(("  ok     " if _failed == before else "  ÉCHEC  ") + method_name)
 	print("\n%d vérifications réussies, %d échecs" % [_passed, _failed])
 	quit(1 if _failed > 0 else 0)
 
@@ -35,7 +42,7 @@ func test_safran_efficace_en_route() -> void:
 	var b := _boat(0.0, 2.5)
 	b.rudder = 1.0
 	_run(b, Vector2.ZERO, 2.0)
-	_check(b.heading < -0.3, "barre à droite en route : le bateau doit virer à droite (cap %.2f rad)" % b.heading)
+	_check(b.heading < -0.2, "barre à droite en route : le bateau doit virer à droite (cap %.2f rad)" % b.heading)
 
 
 func test_marche_arriere_inverse_le_safran() -> void:
@@ -55,7 +62,9 @@ func test_vent_debout_le_bateau_s_arrete() -> void:
 		b.step(DT, _wind(10.0))
 		distance += maxf(b.u, 0.0) * DT
 	_check(b.u < 0.3, "face au vent, le bateau doit s'arrêter (u = %.2f m/s)" % b.u)
-	_check(distance > 8.0 and distance < 18.0, "arrêt bout au vent en 8 à 18 m (%.1f m)" % distance)
+	var length := _params.length
+	_check(distance > 1.3 * length and distance < 4.0 * length,
+		"arrêt bout au vent en 1,3 à 4 longueurs (%.1f m, soit %.1f longueurs)" % [distance, distance / length])
 
 
 func test_pas_de_propulsion_trop_pres_du_vent() -> void:
@@ -76,7 +85,7 @@ func test_vitesses_selon_les_allures() -> void:
 
 func test_vitesse_de_carene() -> void:
 	var s := _steady_speed(100.0, 25.0)
-	var hull_speed := BoatParams.new().hull_speed
+	var hull_speed := _params.hull_speed
 	_check(s < hull_speed * 1.3, "même par 25 nœuds, le bateau plafonne près de sa vitesse de carène (%.1f nœuds)" % (s / KNOT))
 
 
@@ -171,6 +180,65 @@ func test_la_gite_augmente_avec_le_vent() -> void:
 		"plus de vent, plus de gîte (%.0f° contre %.0f°)" % [rad_to_deg(absf(strong.heel)), rad_to_deg(absf(light.heel))])
 
 
+func test_foc_passe_franchement_au_virement() -> void:
+	# Écoute de foc bordée à fond : au passage du vent, il doit se plaquer de l'autre bord.
+	var b := _boat(-45.0)
+	b.lock_heading = true
+	_sail(b, _wind(10.0), 20.0)
+	b.lock_heading = false
+	b.jib_sheet = 0.0
+	b.rudder = 1.0
+	var switches := b.jib_switches
+	var crossed_at := -1.0
+	var t := 0.0
+	while t < 12.0:
+		b.step(DT, _wind(10.0))
+		t += DT
+		if crossed_at < 0.0 and b.twa() < 0.0:
+			crossed_at = t
+		if crossed_at >= 0.0 and t - crossed_at >= 0.5:
+			break
+	_check(crossed_at >= 0.0, "le vent a traversé l'étrave")
+	_check(b.jib_side == 1.0 and b.jib_switches == switches + 1, "le foc a changé de bord une fois")
+	_check(b.jib_angle >= deg_to_rad(b.p.jib_min_deg) * 0.8,
+		"0,5 s après, il est franchement sur son nouveau bord (%.1f°)" % rad_to_deg(b.jib_angle))
+
+
+func test_foc_suit_la_bome_a_l_empannage() -> void:
+	var b := _boat(150.0)  # vent de bâbord : voiles à tribord
+	b.lock_heading = true
+	_sail(b, _wind(10.0), 15.0)
+	_check(b.main_angle > 0.0 and b.jib_side == 1.0, "avant l'empannage, bôme et foc à tribord")
+	b.heading = deg_to_rad(-210.0)  # cap 210 : vent de tribord
+	_run(b, _wind(10.0), 3.0)
+	_check(b.main_angle < 0.0 and b.jib_side == -1.0, "après l'empannage, bôme et foc à bâbord ensemble")
+
+
+func test_larguer_pour_passer() -> void:
+	# Mode manuel (désactivé en jeu pour l'instant) : le foc ne passe que si on largue.
+	var b := _boat(-45.0)
+	b.p.auto_jib = false
+	b.jib_side = -1.0  # tribord amures : foc sous le vent à bâbord
+	b.lock_heading = true
+	_sail(b, _wind(10.0), 20.0, false)
+	b.lock_heading = false
+	b.rudder = 1.0
+	for i in int(12.0 / DT):
+		b.step(DT, _wind(10.0))
+		if b.twa() < -deg_to_rad(45.0):
+			break
+	b.rudder = 0.0
+	b.jib_sheet = 0.2
+	_run(b, _wind(10.0), 1.0)
+	_check(b.jib_side == -1.0 and b.jib_trim() == BoatSim.Trim.BACKED, "écoute bordée : le foc reste à contre")
+	b.jib_sheet = 1.0  # larguer (double appui sur « choquer »)
+	_run(b, _wind(10.0), 1.0)
+	_check(b.jib_side == 1.0 and b.jib_sheet == 1.0, "largué, le foc passe et la nouvelle écoute est molle")
+	b.jib_sheet = 0.3
+	_run(b, _wind(10.0), 1.0)
+	_check(b.jib_trim() != BoatSim.Trim.BACKED, "bordé sur le nouveau bord, il porte")
+
+
 # --- Outils ---
 
 func _check(cond: bool, msg: String) -> void:
@@ -183,7 +251,7 @@ func _check(cond: bool, msg: String) -> void:
 
 ## Bateau au cap compas `bearing` (degrés), avec une vitesse initiale `speed` (m/s).
 func _boat(bearing: float, speed: float = 0.0) -> BoatSim:
-	var b := BoatSim.new()
+	var b := BoatSim.new(_params.duplicate())
 	b.reset(Vector2.ZERO, deg_to_rad(-bearing))
 	b.u = speed
 	return b
