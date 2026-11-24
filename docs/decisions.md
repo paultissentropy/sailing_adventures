@@ -117,3 +117,47 @@ Le jeu final doit se jouer au ressenti. L'interface chiffrée (cap, vitesse, jau
 rose, compas de relèvement) sert pour l'instant au développement et au réglage. F2 la
 masque. Les aides visuelles sans chiffres restent affichées : lignes de vent, sillage,
 ligne de cap, girouette, forme des voiles.
+
+## 13. Deux bateaux, par préréglages (24/11/2026)
+
+**Choix.** Deux ressources `BoatParams` : `game/boats/quillard_6m.tres` et
+`game/boats/croiseur_9m.tres`. La touche B change de bateau en jeu.
+
+- Un seul modèle 3D, dessiné pour 6 m, mis à l'échelle par `visual_scale` (1,5 pour
+  le croiseur). `Boat._m()` ramène les longueurs de la simulation en unités du modèle.
+- Les tests de comportement tournent sur les deux bateaux.
+
+**Pourquoi.** Comparer un bateau vif et léger à un croiseur lourd qui garde son erre,
+sans dupliquer de code. Un vrai modèle 3D par bateau viendra avec le style (P2).
+
+## 14. Banc d'essai et fourchettes de référence (24/11/2026)
+
+**Contexte.** On ne peut pas juger la physique « au ressenti » sans être marin.
+
+**Choix.**
+- `tools/bench.sh` : un pilote automatique exécute des manœuvres types et compare
+  chaque mesure à une fourchette ([references-bateaux.md](references-bateaux.md)).
+  Le bulletin est [banc-essai.md](banc-essai.md).
+- L'enregistreur (F3) et `tools/analyse_partie.py` appliquent les mêmes références aux
+  manœuvres du joueur.
+
+**Limite.** Les fourchettes sont des ordres de grandeur, pas des mesures. Elles servent
+à repérer les écarts grossiers.
+
+## 15. Passage du foc lisible, « larguer pour passer » préparé (24/11/2026)
+
+- En mode automatique, le foc se plaque tout de suite sur son nouveau bord quand le vent
+  traverse l'étrave. Au portant, il suit la bôme. Le passage est signalé : battement des
+  voiles dans le lit du vent, message, étiquette qui s'allume.
+- La mécanique manuelle « larguer pour passer » est codée et testée derrière
+  `auto_jib = false`, avec `jib_release_sheet`. Elle n'est pas encore activée en jeu :
+  - les touches Q/A agissent sur l'écoute en service ;
+  - écoute bordée, le foc reste à contre ;
+  - larguée (double appui), il passe, et l'autre écoute est molle.
+
+## 16. Vue cockpit (24/11/2026)
+
+Deuxième caméra (touche V) : derrière le barreur, un peu au-dessus de sa tête, sans être
+une vraie première personne. Elle suit le cap et la moitié de la gîte, mais pas le
+tangage, pour éviter le mal de mer. Elle prépare un jeu plus « au ressenti ».
+

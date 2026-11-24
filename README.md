@@ -1,7 +1,8 @@
 # Sailing Adventures
 
-Petite aventure à la voile, semi-réaliste, en 3D mignonne. Prototype **P0.1** : un bac à
-sable pour sentir la manœuvre d'un petit quillard (grand-voile et foc).
+Petite aventure à la voile, semi-réaliste, en 3D mignonne. Prototype **P0.2** : un bac à
+sable pour sentir la manœuvre d'un voilier (grand-voile et foc), avec deux bateaux au
+choix : un quillard de 6 m et un croiseur de 9 m.
 
 ![Capture du prototype](docs/img/capture.png)
 
@@ -12,6 +13,8 @@ au développement ; F2 la masque.
 - Modèle physique : [docs/modele-voile.md](docs/modele-voile.md)
 - Décisions techniques : [docs/decisions.md](docs/decisions.md)
 - Journal de développement (fait, mesuré, limites, suite) : [docs/journal.md](docs/journal.md)
+- Références des bateaux et banc d'essai : [docs/references-bateaux.md](docs/references-bateaux.md),
+  [docs/banc-essai.md](docs/banc-essai.md)
 
 ## Lancer le jeu
 
@@ -42,7 +45,10 @@ L'aide du jeu (H) affiche les noms de ton clavier.
 | Choquer en grand | deux appuis rapides sur « choquer » |
 | Regarder par le travers bâbord / tribord | J / L (même touche pour revenir) |
 | Vent : tourner / force | 1 · 2 / 3 · 4 |
+| Changer de bateau (quillard 6 m / croiseur 9 m) | B |
+| Vue extérieure / cockpit | V |
 | Masquer les instruments | F2 |
+| Enregistrer la partie (début / fin) | F3 |
 | Vecteurs de debug | F1 |
 | Caméra suit le cap | C |
 | Replacer le bateau | R |
@@ -58,8 +64,9 @@ Le vent vient du nord, à 10 nœuds. Le bateau part au travers, bâbord amures.
 3. **Savoir quand virer** : passe en vue de travers (J ou L, du côté de la bouée). Le
    compas de relèvement montre si la bouée est devant ou derrière le travers. Quand elle
    y arrive, vire.
-4. **Virer de bord** avec de l'élan : le foc passe tout seul. Sans vitesse, le bateau
-   reste bout au vent et la barre ne répond plus.
+4. **Virer de bord** avec de l'élan : le foc passe tout seul (message « Le foc passe à… »).
+   Sans vitesse, le bateau reste bout au vent et la barre ne répond plus. Le croiseur
+   tourne plus lentement mais garde mieux son erre.
 5. **Empanner** au vent arrière : borde la grand-voile avant, sinon la bôme passe d'un coup.
 6. **Choquer en grand** en urgence (deux appuis rapides) quand le bateau gîte trop.
 7. **Naviguer au ressenti** : F2, puis lis le vent avec les lignes de vent, la girouette
@@ -67,8 +74,33 @@ Le vent vient du nord, à 10 nœuds. Le bateau part au travers, bâbord amures.
 8. **Changer le vent** : 1 et 2 le font tourner, 3 et 4 changent sa force.
 
 La caméra se tourne en cliquant-glissant et se zoome à la molette ; C la détache du cap.
+En vue cockpit (V), la molette avance ou recule dans le cockpit.
+
+À vitesse, la moustache d'étrave, les gerbes d'écume et les repères flottants (écume,
+algues, brindilles) qui défilent le long de la coque montrent qu'on avance.
 
 ![Vue de travers](docs/img/capture-travers.png)
+
+![Croiseur 9 m, moustache d'étrave](docs/img/capture-croiseur.png)
+
+![Vue cockpit](docs/img/capture-cockpit.png)
+
+## Vérifier les manœuvres
+
+Pas besoin d'être marin pour savoir si les manœuvres sont crédibles :
+
+1. **Le banc d'essai** compare les bateaux à des valeurs de référence :
+   ```bash
+   tools/bench.sh
+   ```
+   Le bulletin est écrit dans [docs/banc-essai.md](docs/banc-essai.md) (✓ dans la
+   fourchette, ⚠ à examiner).
+2. **Tes propres manœuvres** : en jeu, F3 démarre l'enregistrement et F3 l'arrête. Ensuite :
+   ```bash
+   python3 tools/analyse_partie.py
+   ```
+   Pour chaque virement : durée, perte de vitesse, bateau resté bout au vent ou non.
+   Pour chaque empannage : contrôlé ou non.
 
 ## Retours utiles après une partie
 
@@ -82,7 +114,8 @@ En cas d'erreur dans le terminal, la copier telle quelle.
 ```bash
 tools/test.sh          # tests de la simulation
 tools/smoke.sh         # lance la scène sans interface et vérifie qu'il n'y a pas d'erreur
-tools/polar.sh         # polaire de vitesse -> docs/img/polaire.png
+tools/polar.sh         # polaires des deux bateaux -> docs/img/polaire.png
+tools/bench.sh         # banc d'essai -> docs/banc-essai.md
 tools/screenshot.sh    # capture d'écran -> docs/img/capture.png
 ```
 

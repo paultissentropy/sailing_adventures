@@ -21,7 +21,19 @@ Les réglages de `BoatParams` choisissent ce qui est actif :
   rejointe avec la réactivité `turn_response`. Les couples des voiles, de la gîte et de
   la carène sont calculés mais ignorés.
 - `allow_leeway = false` : la vitesse latérale reste nulle.
-- `auto_jib = true` : le foc passe sous le vent dès que le vent change de bord.
+- `auto_jib = true` : le foc passe sous le vent dès que le vent traverse l'étrave, et se
+  plaque aussitôt à `jib_min_deg` sur son nouveau bord. Au portant, il suit la bôme.
+  Avec `auto_jib = false` (« larguer pour passer », pas encore actif en jeu), il reste
+  à contre tant que l'écoute en service n'est pas choquée au-delà de `jib_release_sheet`.
+- Trop près du vent (facteur de point de près < 1), une voile perd sa portance **et**
+  la traînée induite qui va avec. Elle se comporte comme une voile qui faseye
+  (`sail_flutter_cd`).
+- Le safran ne sert plus qu'à freiner, d'autant plus qu'on met de barre :
+  `rudder_cd0 + rudder_brake × barre²`.
+- La carène freine `reverse_drag_factor` fois plus en marche arrière.
+
+Les préréglages des deux bateaux sont dans `game/boats/`. Leurs mesures, comparées aux
+références, sont dans [banc-essai.md](banc-essai.md).
 
 Le reste de ce document décrit le modèle complet, toujours présent dans le code.
 

@@ -27,7 +27,9 @@ Les scripts utilisent la variable `GODOT` (par défaut `godot` dans le PATH).
 ```bash
 tools/test.sh            # tests de la simulation, sans interface
 tools/smoke.sh           # lance la scène principale sans interface pendant quelques secondes
-tools/polar.sh           # calcule la polaire du bateau -> tools/out/polar.csv + docs/img/polaire.png
+tools/polar.sh           # polaires des deux bateaux -> tools/out/polar.csv + docs/img/polaire.png
+tools/bench.sh           # banc d'essai (manœuvres types vs références) -> docs/banc-essai.md
+python3 tools/analyse_partie.py [csv]   # analyse une partie enregistrée en jeu (F3)
 tools/screenshot.sh [png] [secondes] [distance] [inclinaison] [rotation] [--debug]
                          # capture d'écran réelle (ouvre une fenêtre : il faut un affichage)
 ```
@@ -40,6 +42,7 @@ Après avoir ajouté ou renommé un `class_name`, les scripts relancent un impor
 ## Organisation
 
 - `game/sim/` : physique pure (`RefCounted`/`Resource`), **aucun nœud**. Testable sans interface.
+- `game/boats/` : préréglages `BoatParams` des bateaux (quillard 6 m, croiseur 9 m).
 - `game/boat/` : scène du bateau, relie commandes, simulation et visuel.
 - `game/world/` : eau, bouées, décor.
 - `game/camera/`, `game/ui/`, `game/debug/` : caméra, interface, affichage des vecteurs.
@@ -55,5 +58,9 @@ Après avoir ajouté ou renommé un `class_name`, les scripts relancent un impor
   partout (cap positif = vers bâbord, repère bateau `(avant, tribord)`).
 - Touches définies en **touches physiques** (`physical_keycode`) dans `game/core/controls.gd`,
   pour fonctionner en AZERTY comme en QWERTY.
-- Tout nouveau comportement physique doit avoir un test dans `game/tests/run_tests.gd`.
-- Les réglages du bateau sont dans `BoatParams` ; vérifier la polaire après chaque changement.
+- Tout nouveau comportement physique doit avoir un test dans `game/tests/run_tests.gd`
+  (les tests tournent sur chaque préréglage de `game/boats/`).
+- Les réglages du bateau sont dans `BoatParams` et `game/boats/*.tres`. Après chaque
+  changement, relancer `tools/bench.sh` et `tools/polar.sh`.
+- Fourchettes de référence : `docs/references-bateaux.md`, `game/tests/bench.gd` et
+  `tools/analyse_partie.py`, à garder synchronisés.

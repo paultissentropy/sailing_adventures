@@ -11,6 +11,8 @@ const TRIM_TEXT := {
 }
 
 var boat: Boat
+var _jib_switches := 0
+var _flash_until := 0.0
 
 
 func _ready() -> void:
@@ -27,8 +29,14 @@ func _draw() -> void:
 	var sim := boat.sim
 	var font := ThemeDB.fallback_font
 	var jib_label := "Foc (%s)" % ("tribord" if sim.jib_side > 0.0 else "bâbord")
+	# L'étiquette du foc s'allume brièvement quand il change de bord.
+	var now := Time.get_ticks_msec() / 1000.0
+	if sim.jib_switches != _jib_switches:
+		_jib_switches = sim.jib_switches
+		_flash_until = now + 0.8
+	var jib_color := Color(1.0, 0.85, 0.3) if now < _flash_until else Color.WHITE
 	_sheet_row(font, 8.0, "Grand-voile", sim.main_sheet, sim.main_trim())
-	_sheet_row(font, 44.0, jib_label, sim.jib_sheet, sim.jib_trim())
+	_sheet_row(font, 44.0, jib_label, sim.jib_sheet, sim.jib_trim(), jib_color)
 
 	# Barre : centrée, déviation vers la gauche ou la droite
 	var y := 82.0
@@ -41,8 +49,9 @@ func _draw() -> void:
 	draw_line(Vector2(mid, y - 2), Vector2(mid, y + 18), Color.WHITE, 1.0)
 
 
-func _sheet_row(font: Font, y: float, label: String, sheet: float, trim: BoatSim.Trim) -> void:
-	draw_string(font, Vector2(0, y + 13), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
+func _sheet_row(font: Font, y: float, label: String, sheet: float, trim: BoatSim.Trim,
+		label_color: Color = Color.WHITE) -> void:
+	draw_string(font, Vector2(0, y + 13), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, label_color)
 	var bar := Rect2(100, y, 150, 16)
 	draw_rect(bar, Color(1, 1, 1, 0.15))
 	# La jauge grandit quand on choque.

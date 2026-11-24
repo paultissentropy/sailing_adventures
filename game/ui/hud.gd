@@ -10,6 +10,7 @@ const BearingTape := preload("res://ui/bearing_tape.gd")
 
 var boat: Boat
 var wind: WindField
+var recorder: Recorder
 
 var _heading: Label
 var _info: Label
@@ -20,6 +21,8 @@ var _gauges: TrimGauges
 var _tape: BearingTape
 ## Éléments chiffrés masqués par F2.
 var _instruments: Array[Control] = []
+var _jib_switches := 0
+var _jib_message_until := 0.0
 
 
 func _ready() -> void:
@@ -102,11 +105,14 @@ func _process(_delta: float) -> void:
 	var tw := sim.true_wind
 	_heading.text = "CAP %03.0f°" % sim.bearing_deg()
 	var lines := PackedStringArray([
+		"Bateau   %s" % sim.p.display_name,
 		"Vitesse  %4.1f nœuds" % (sim.speed() / KNOT),
 		"Allure   %s, %s" % [_point_of_sail(absf(twa)), "tribord amures" if twa > 0.0 else "bâbord amures"],
 		"Vent     %4.1f nœuds du %03.0f°" % [tw.length() / KNOT, fposmod(rad_to_deg(atan2(-tw.x, tw.y)), 360.0)],
 		"Gîte     %4.0f°" % absf(rad_to_deg(sim.heel)),
 	])
+	if recorder != null and recorder.recording:
+		lines.append("● Enregistrement (F3 pour arrêter)")
 	_info.text = "\n".join(lines)
 	_hint.text = _hint_text(absf(twa))
 
@@ -131,6 +137,12 @@ func _point_of_sail(twa: float) -> String:
 
 func _hint_text(twa: float) -> String:
 	var sim := boat.sim
+	var now := Time.get_ticks_msec() / 1000.0
+	if sim.jib_switches != _jib_switches:
+		_jib_switches = sim.jib_switches
+		_jib_message_until = now + 2.5
+	if now < _jib_message_until:
+		return "Le foc passe à %s." % ("tribord" if sim.jib_side > 0.0 else "bâbord")
 	if twa < 38.0 and sim.u < 0.4:
 		return "Bout au vent : le bateau n'avance plus et la barre ne répond plus."
 	if absf(sim.heel) > deg_to_rad(25.0):
@@ -146,7 +158,10 @@ func _help_text() -> String:
 		["Regarder par le travers Bd / Td", "look_port", "look_starboard"],
 		["Vent : tourner", "wind_left", "wind_right"],
 		["Vent : force", "wind_down", "wind_up"],
+		["Changer de bateau", "boat_switch", ""],
+		["Vue extérieure / cockpit", "camera_mode", ""],
 		["Caméra suit le cap", "camera_toggle", ""],
+		["Enregistrer la partie", "record_toggle", ""],
 		["Masquer les instruments", "instruments_toggle", ""],
 		["Vecteurs de debug", "debug_toggle", ""],
 		["Replacer le bateau", "reset_boat", ""],
