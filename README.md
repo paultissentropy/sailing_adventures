@@ -1,9 +1,12 @@
 # Sailing Adventures
 
-Petite aventure à la voile, semi-réaliste, en 3D mignonne. Prototype **P0** : un bac à
+Petite aventure à la voile, semi-réaliste, en 3D mignonne. Prototype **P0.1** : un bac à
 sable pour sentir la manœuvre d'un petit quillard (grand-voile et foc).
 
 ![Capture du prototype](docs/img/capture.png)
+
+Le jeu vise à terme une navigation **au ressenti**. L'interface chiffrée actuelle sert
+au développement ; F2 la masque.
 
 - Vision : [docs/vision.md](docs/vision.md)
 - Modèle physique : [docs/modele-voile.md](docs/modele-voile.md)
@@ -33,12 +36,13 @@ L'aide du jeu (H) affiche les noms de ton clavier.
 
 | Action | AZERTY |
 |---|---|
-| Barre | Q / D ou ← / → |
-| Grand-voile : border / choquer | Z / S ou ↑ / ↓ |
-| Foc : border / choquer | E / A |
-| Changer d'écoute de foc | Espace |
+| Barre | ← / → |
+| Grand-voile : border / choquer | S / Z |
+| Foc : border / choquer | Q / A |
+| Choquer en grand | deux appuis rapides sur « choquer » |
+| Regarder par le travers bâbord / tribord | J / L (même touche pour revenir) |
 | Vent : tourner / force | 1 · 2 / 3 · 4 |
-| Risées | G |
+| Masquer les instruments | F2 |
 | Vecteurs de debug | F1 |
 | Caméra suit le cap | C |
 | Replacer le bateau | R |
@@ -49,16 +53,22 @@ Le vent vient du nord, à 10 nœuds. Le bateau part au travers, bâbord amures.
 
 1. **Régler ses voiles** : choque jusqu'à ce que la voile faseye, puis borde juste assez
    (« bien réglée » sur les penons).
-2. **Remonter au vent** jusqu'à la bouée jaune au nord. Plus tu serres le vent, plus tu
-   ralentis et dérives (secteur rouge de la rose) ; vers 20–30° du vent, le bateau s'arrête.
-3. **Virer de bord** avec de l'élan, puis changer d'écoute de foc (Espace). Un virement
-   trop lent laisse le bateau bout au vent : le foc à contre aide à abattre.
-4. **Empanner** au vent arrière : borde la grand-voile avant, sinon la bôme passe d'un coup.
-5. **Barrer avec les voiles** : GV bordée seule, le bateau lofe ; foc bordé seul, il abat.
-6. **Changer le vent** : 1 et 2 le font tourner, 3 et 4 changent sa force. Par 20 nœuds,
-   surveille la gîte.
+2. **Remonter au vent** vers la bouée jaune au nord. Sous 30° du vent environ (secteur
+   rouge de la rose), le bateau n'avance plus.
+3. **Savoir quand virer** : passe en vue de travers (J ou L, du côté de la bouée). Le
+   compas de relèvement montre si la bouée est devant ou derrière le travers. Quand elle
+   y arrive, vire.
+4. **Virer de bord** avec de l'élan : le foc passe tout seul. Sans vitesse, le bateau
+   reste bout au vent et la barre ne répond plus.
+5. **Empanner** au vent arrière : borde la grand-voile avant, sinon la bôme passe d'un coup.
+6. **Choquer en grand** en urgence (deux appuis rapides) quand le bateau gîte trop.
+7. **Naviguer au ressenti** : F2, puis lis le vent avec les lignes de vent, la girouette
+   et la forme des voiles.
+8. **Changer le vent** : 1 et 2 le font tourner, 3 et 4 changent sa force.
 
 La caméra se tourne en cliquant-glissant et se zoome à la molette ; C la détache du cap.
+
+![Vue de travers](docs/img/capture-travers.png)
 
 ## Retours utiles après une partie
 

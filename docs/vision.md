@@ -12,6 +12,22 @@ Une petite aventure à la voile, en 3D, au rythme lent.
 - **Esthétique mignonne.** 3D cartoonesque, couleurs douces, bateau un peu jouet.
 - **Rythme lent.** Une petite aventure contemplative, sans pression de score.
 
+## Principes de jeu (recentrage du 24 novembre 2026)
+
+- **Ce n'est pas un simulateur** de voile ni de régate. Les principes de navigation
+  sont réalistes, sans viser une simulation parfaite. Tout le monde doit pouvoir jouer.
+- **En cas de doute entre réalisme et jouabilité, on choisit la jouabilité.**
+- **Les concepts arrivent pas à pas** au fil de l'aventure. Vent apparent, dérive,
+  équilibre des voiles, foc manuel, risées… sont désactivés pour l'instant et
+  pourront devenir des leçons.
+- **La difficulté vient de la manœuvre du bateau** : barrer, régler, virer, empanner au
+  bon moment. Une fausse manœuvre doit être possible.
+- **Le jeu final se joue au ressenti** : le vent, le bateau face au vent, la navigation
+  (cartes plus tard), la météo, la mer. Peu de chiffres et peu d'interface.
+- **Pendant le développement**, on garde une interface chiffrée et les réglages
+  réalistes pour déboguer et choisir ce qu'on garde. La touche F2 masque les
+  instruments pour tester le jeu au ressenti.
+
 ## Le bateau
 
 Un petit quillard monocoque d'environ 6 m : un mât, une grand-voile sur bôme et une

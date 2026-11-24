@@ -143,7 +143,10 @@ func _substep(dt: float) -> void:
 	var f := forward()
 	var r := right()
 	true_wind_body = Vector2(true_wind.dot(f), true_wind.dot(r))
-	apparent_wind = true_wind_body - Vector2(u, v)
+	# Vent relatif au bateau. En mode vent réel seul, il ne sert qu'à la force (moins de
+	# pression au portant, plus au près) ; les angles restent ceux du vent réel.
+	var relative := true_wind_body - Vector2(u, v)
+	apparent_wind = relative if p.use_apparent_wind else true_wind_body
 	var aws := apparent_wind.length()
 	var flow := apparent_wind / aws if aws > 1e-4 else Vector2(-1.0, 0.0)
 	free_angle = atan2(flow.y, -flow.x)
@@ -152,7 +155,10 @@ func _substep(dt: float) -> void:
 	_update_sail_angles(aws, dt)
 
 	# --- Voiles et fardage ---
-	var q_air := 0.5 * RHO_AIR * aws * aws
+	var q_air := 0.5 * RHO_AIR * relative.length_squared()
+	var pointing := 1.0
+	if not p.use_apparent_wind:
+		pointing = smoothstep(deg_to_rad(p.pointing_min_deg), deg_to_rad(p.pointing_full_deg), absf(free_angle))
 	var heel_eff := pow(cos(heel), 2.0)
 	var ce_y := p.ce_height * sin(heel)
 	var stall := deg_to_rad(p.sail_stall_deg)
@@ -160,12 +166,14 @@ func _substep(dt: float) -> void:
 	var main_chord := Vector2(-cos(main_angle), sin(main_angle))
 	main_alpha = Foil.incidence(flow, main_chord)
 	var cm := _sail_coefficients(main_alpha, stall)
+	cm.x *= pointing
 	_add("main", Vector2(p.mast_x, ce_y) + main_chord * (p.boom_length * 0.35),
 		(Foil.lift_direction(flow, main_chord) * cm.x + flow * cm.y) * (q_air * p.main_area * heel_eff))
 
 	var jib_chord := Vector2(-cos(jib_angle), sin(jib_angle))
 	jib_alpha = Foil.incidence(flow, jib_chord)
 	var cj := _sail_coefficients(jib_alpha, stall)
+	cj.x *= pointing
 	# Au portant, la grand-voile dévente le foc.
 	var shadow := 1.0 - 0.8 * smoothstep(deg_to_rad(130.0), deg_to_rad(170.0), absf(free_angle))
 	_add("jib", Vector2(p.jib_tack_x, ce_y * 0.8) + jib_chord * (p.jib_foot * 0.35),
@@ -208,11 +216,18 @@ func _substep(dt: float) -> void:
 	var mu := p.mass * (1.0 + p.added_mass_surge)
 	var mv := p.mass * (1.0 + p.added_mass_sway)
 	u += (total.x / mu - yaw_rate * v) * dt
-	v += (total.y / mv + yaw_rate * u) * dt
+	if p.allow_leeway:
+		v += (total.y / mv + yaw_rate * u) * dt
+	else:
+		v = 0.0
 	if lock_heading:
 		yaw_rate = 0.0
 	else:
-		yaw_rate += tau / p.yaw_inertia * dt
+		if p.sail_yaw_effects:
+			yaw_rate += tau / p.yaw_inertia * dt
+		else:
+			yaw_rate = move_toward(yaw_rate, _helm_yaw_rate(),
+				absf(_helm_yaw_rate() - yaw_rate) * minf(1.0, p.turn_response * dt))
 		heading = wrapf(heading + yaw_rate * dt, -PI, PI)
 	position += (f * u + r * v) * dt
 
@@ -222,6 +237,13 @@ func _substep(dt: float) -> void:
 	var m_right := p.mass * GRAVITY * p.metacentric_height * sin(heel)
 	heel_rate += (m_heel - m_right - p.roll_damping * heel_rate) / p.roll_inertia * dt
 	heel = clampf(heel + heel_rate * dt, -1.3, 1.3)
+
+
+## Mode simplifié : vitesse de rotation voulue par la barre. Il faut de la vitesse pour
+## tourner, et l'effet s'inverse en marche arrière.
+func _helm_yaw_rate() -> float:
+	var effect := smoothstep(0.0, p.turn_full_speed, absf(u)) * signf(u)
+	return -rudder * deg_to_rad(p.turn_rate_max_deg) * effect
 
 
 ## Les voiles prennent l'angle du drapeau, bornées par leur écoute, à vitesse finie.

@@ -1,6 +1,95 @@
 # Journal de développement
 
 Une entrée par session de travail : ce qui a été discuté, fait, mesuré, et ce qui reste.
+Le backlog, tenu à jour, est en premier.
+
+## Backlog
+
+- **Punir l'empannage non contrôlé** (relevé au test du 24/11). Le passage de la bôme
+  fonctionne déjà. À ajouter : casse, forte perte de vitesse ou coup de gîte quand on
+  empanne GV choquée par vent soutenu. Rien d'implémenté pour l'instant.
+- **Réintroduire les concepts un par un**, comme leçons de l'aventure : vent apparent,
+  dérive, équilibre des voiles (loffée et abattée), foc manuel (foc à contre),
+  risées. Chacun a déjà son réglage dans `BoatParams`.
+- **P1** : risées visibles sur l'eau, île avec dévent et accélération dans les passes.
+- **Collisions** avec les bouées et les îles.
+- **Cartes** et navigation (relèvements sur la carte).
+- Retirer peu à peu l'interface chiffrée au profit du ressenti (voir [vision.md](vision.md)).
+
+## 2026-11-24 — Retours du premier test, prototype P0.1
+
+### Retours du test
+
+- **Recentrage** : pas un simulateur ; la jouabilité l'emporte sur le réalisme ; la
+  difficulté vient de la manœuvre ; à terme, le jeu se joue au ressenti plutôt qu'aux
+  chiffres (principes ajoutés à [vision.md](vision.md)).
+- **Bugs** :
+  - le virement n'était jamais propre, car le foc restait à contre ;
+  - la jauge des écoutes était à l'envers.
+- **Lisibilité** : le cap n'était pas assez visible ; on ne voyait pas d'où vient le
+  vent ; la trajectoire se lisait mal, car les vaguelettes défilaient avec le vent ; il
+  fallait pouvoir regarder par le travers et disposer d'un compas de relèvement.
+- **Physique** : tenir le cap (seule la barre fait tourner), pas de dérive, vent réel
+  seul, pas de risées pour l'instant. Garder l'arrêt bout au vent, qui plaisait.
+- **Empannage** : le passage de bôme fonctionne ; il faudra le punir plus tard (backlog).
+
+### Décisions prises ensemble
+
+- Seule la jauge était inversée, les touches ne l'étaient pas.
+- Les voiles ne voient que le vent réel.
+- Il faut de la vitesse pour tourner.
+- Nouvelles touches d'écoute : Q et A pour border et choquer le foc, S et Z pour la GV.
+  La barre passe sur les flèches.
+- **Deux appuis rapides sur « choquer » choquent en grand.** Les fausses manœuvres
+  que ça provoque font partie du jeu.
+- La vue de travers (J et L) sert à savoir quand virer.
+- F2 masque les instruments, pour tester le jeu au ressenti.
+
+### Réalisé
+
+- Physique simplifiée par réglages (décision n° 11) : vent réel seul, cap tenu, pas de
+  dérive, foc automatique. Deux compensations : facteur de point de près et pression
+  du vent relatif.
+- Commandes : nouvelles touches, double appui (`SheetInput`), vue de travers,
+  masquage des instruments (F2). Les touches Espace (écoute de foc) et G (risées) sont
+  retirées.
+- Interface : « CAP 090° » en grand, panneau allégé (sans vent apparent), jauges
+  corrigées, **compas de relèvement** en haut au centre (bouées, origine du vent,
+  avant et travers du bateau), rose limitée au vent réel.
+- Scène : **lignes de vent** qui filent autour du bateau, **sillage**, **ligne de cap**
+  en pointillés, eau qui ne dérive presque plus.
+
+### Mesures (10 nœuds de vent)
+
+| Mesure | Avant (P0) | Maintenant |
+|---|---|---|
+| 30° du vent réel | 2,8 nœuds | 0,7 nœud (zone vent debout nette) |
+| Près (50°) | 4,1 nœuds | 4,9 nœuds |
+| Travers | 4,8 nœuds | 5,3 nœuds |
+| Vent arrière | 3,5 nœuds | 3,5 nœuds |
+| Meilleur angle de remontée | vers 40° | vers 50° (virement d'environ 100°) |
+| Rotation barre à fond | environ 13°/s | 20°/s dès 1,5 m/s |
+
+Arrêt bout au vent : entre 8 et 18 m, vérifié par un test.
+
+### Vérifications
+
+- 28 vérifications sur 28 réussies (`tools/test.sh`), dont les nouvelles : cap tenu,
+  pas de dérive, foc jamais à contre, virement propre, double appui.
+- La scène principale tourne sans erreur (`tools/smoke.sh`).
+- Captures vérifiées, en vue normale et en vue de travers
+  ([img/capture.png](img/capture.png), [img/capture-travers.png](img/capture-travers.png)).
+  Corrigés au passage : sillage trop opaque, texte des jauges coupé.
+
+### Limites connues
+
+- Avec un virement d'environ 100°, une bouée « par le travers » au moment de virer est
+  légèrement trop tôt : on arrive un peu sous la bouée.
+- Le sillage reste une bande assez uniforme ; à affiner avec le style (P2).
+- Sur le compas de relèvement, les étiquettes se chevauchent quand deux repères
+  coïncident (par exemple « vent » et « Bd »).
+- Pas encore testé en jeu : le ressenti du double appui et de la vue de travers reste
+  à valider.
 
 ## 2026-11-23 — Mise en place et prototype P0
 

@@ -7,22 +7,24 @@ extends Node
 ## sur le clavier du joueur.
 
 const ACTIONS := {
-	"helm_left": [KEY_A, KEY_LEFT],
-	"helm_right": [KEY_D, KEY_RIGHT],
-	"main_in": [KEY_W, KEY_UP],
-	"main_out": [KEY_S, KEY_DOWN],
-	"jib_in": [KEY_E],
+	"helm_left": [KEY_LEFT],
+	"helm_right": [KEY_RIGHT],
+	# AZERTY : S borde la GV, Z la choque ; Q borde le foc, A le choque.
+	"main_in": [KEY_S],
+	"main_out": [KEY_W],
+	"jib_in": [KEY_A],
 	"jib_out": [KEY_Q],
-	"jib_switch": [KEY_SPACE],
+	"look_port": [KEY_J],
+	"look_starboard": [KEY_L],
 	"camera_toggle": [KEY_C],
 	"debug_toggle": [KEY_F1],
+	"instruments_toggle": [KEY_F2],
 	"help_toggle": [KEY_H],
 	"reset_boat": [KEY_R],
 	"wind_left": [KEY_1],
 	"wind_right": [KEY_2],
 	"wind_down": [KEY_3],
 	"wind_up": [KEY_4],
-	"gusts_toggle": [KEY_G],
 }
 
 const SYMBOLS := {

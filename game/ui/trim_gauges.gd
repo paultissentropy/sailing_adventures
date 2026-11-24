@@ -14,7 +14,7 @@ var boat: Boat
 
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(360, 112)
+	custom_minimum_size = Vector2(410, 112)
 
 
 func _process(_delta: float) -> void:
@@ -45,11 +45,11 @@ func _sheet_row(font: Font, y: float, label: String, sheet: float, trim: BoatSim
 	draw_string(font, Vector2(0, y + 13), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
 	var bar := Rect2(100, y, 150, 16)
 	draw_rect(bar, Color(1, 1, 1, 0.15))
-	# Barre pleine = écoute bordée
-	draw_rect(Rect2(bar.position, Vector2(bar.size.x * (1.0 - sheet), bar.size.y)), Color(0.55, 0.8, 1.0, 0.9))
+	# La jauge grandit quand on choque.
+	draw_rect(Rect2(bar.position, Vector2(bar.size.x * sheet, bar.size.y)), Color(0.55, 0.8, 1.0, 0.9))
 	draw_string(font, Vector2(bar.position.x + 2, y + 30), "bordée", HORIZONTAL_ALIGNMENT_LEFT, -1, 10,
 		Color(1, 1, 1, 0.5))
 	draw_string(font, Vector2(bar.end.x - 48, y + 30), "choquée", HORIZONTAL_ALIGNMENT_LEFT, -1, 10,
 		Color(1, 1, 1, 0.5))
 	var info: Array = TRIM_TEXT[trim]
-	draw_string(font, Vector2(260, y + 13), info[0], HORIZONTAL_ALIGNMENT_LEFT, 110, 13, info[1])
+	draw_string(font, Vector2(260, y + 13), info[0], HORIZONTAL_ALIGNMENT_LEFT, 150, 13, info[1])

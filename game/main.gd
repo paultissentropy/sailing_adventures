@@ -10,6 +10,8 @@ const WIND_STEP_KN := 2.0
 @onready var _water: Water = $Water
 @onready var _hud: Hud = $HUD
 @onready var _overlay: ForceOverlay = $ForceOverlay
+@onready var _camera: OrbitCamera = $Camera
+@onready var _wake: Wake = $Wake
 
 
 func _ready() -> void:
@@ -17,7 +19,10 @@ func _ready() -> void:
 		wind = WindField.new()
 	_boat.wind = wind
 	_boat.reset()
-	_hud.setup(_boat, wind)
+	var buoys: Array[Node3D] = []
+	for buoy in $Buoys.get_children():
+		buoys.append(buoy)
+	_hud.setup(_boat, wind, _camera, buoys)
 	_overlay.visible = "--debug" in OS.get_cmdline_user_args()
 
 
@@ -39,11 +44,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		wind.speed_knots = maxf(0.0, wind.speed_knots - WIND_STEP_KN)
 	elif event.is_action_pressed("wind_up"):
 		wind.speed_knots = minf(30.0, wind.speed_knots + WIND_STEP_KN)
-	elif event.is_action_pressed("gusts_toggle"):
-		wind.gusts_enabled = not wind.gusts_enabled
 	elif event.is_action_pressed("reset_boat"):
 		_boat.reset()
 		_overlay.clear_trail()
+		_wake.clear()
+	elif event.is_action_pressed("instruments_toggle"):
+		_hud.toggle_instruments()
 	elif event.is_action_pressed("debug_toggle"):
 		_overlay.visible = not _overlay.visible
 	elif event.is_action_pressed("help_toggle"):

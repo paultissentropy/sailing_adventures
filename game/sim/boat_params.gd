@@ -70,5 +70,24 @@ extends Resource
 @export var sail_flutter_cd := 0.25
 ## Le vent doit passer de ce nombre de degrés « sous la bôme » avant qu'elle bascule.
 @export var by_the_lee_deg := 12.0
-## Si vrai, le foc passe tout seul sous le vent (aide pour débutant).
-@export var auto_jib := false
+## Si vrai, le foc passe tout seul sous le vent : il n'est jamais à contre.
+@export var auto_jib := true
+
+@export_group("Simplifications (jouabilité)")
+## Les voiles voient le vent apparent (sinon : vent réel seul).
+@export var use_apparent_wind := false
+## Les voiles, la gîte et la carène font tourner le bateau (sinon : seule la barre).
+@export var sail_yaw_effects := false
+## Le bateau peut glisser sur le côté (dérive).
+@export var allow_leeway := false
+## Vent réel seul : la portance des voiles s'éteint sous `pointing_min_deg` du vent et
+## n'est pleine qu'au-delà de `pointing_full_deg`. Remplace l'effet du vent apparent
+## qui, en vrai, empêche de remonter trop près du vent.
+@export var pointing_min_deg := 30.0
+@export var pointing_full_deg := 48.0
+## Barre seule : vitesse de rotation à fond de barre (°/s) et vitesse à partir de
+## laquelle la barre a tout son effet (m/s).
+@export var turn_rate_max_deg := 20.0
+@export var turn_full_speed := 1.5
+## Barre seule : réactivité de la rotation (1/s).
+@export var turn_response := 4.0

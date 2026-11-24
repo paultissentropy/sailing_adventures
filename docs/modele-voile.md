@@ -7,6 +7,24 @@ Il est **simplifié mais fondé sur les vrais principes**. On ne cherche pas la
 précision d'un simulateur de course, mais des comportements justes qui émergent
 du calcul plutôt que d'être scriptés.
 
+## Mode simplifié (actif)
+
+Depuis le 24/11/2026, le jeu tourne en mode simplifié (voir `docs/decisions.md`, n° 11).
+Les réglages de `BoatParams` choisissent ce qui est actif :
+
+- `use_apparent_wind = false` : les **angles** vus par les voiles et la girouette sont
+  ceux du vent réel. La **pression** utilise le vent relatif au bateau. Un facteur de
+  point de près (`pointing_min_deg` à `pointing_full_deg`, 30° à 48°) éteint la
+  portance trop près du vent.
+- `sail_yaw_effects = false` : la vitesse de rotation suit la barre,
+  `-barre × turn_rate_max_deg × smoothstep(0, turn_full_speed, |u|) × signe(u)`,
+  rejointe avec la réactivité `turn_response`. Les couples des voiles, de la gîte et de
+  la carène sont calculés mais ignorés.
+- `allow_leeway = false` : la vitesse latérale reste nulle.
+- `auto_jib = true` : le foc passe sous le vent dès que le vent change de bord.
+
+Le reste de ce document décrit le modèle complet, toujours présent dans le code.
+
 ## Conventions
 
 - **Monde 2D** : le plan horizontal. `Vector2(x, y)` = `(X, Z)` de Godot. Le nord est

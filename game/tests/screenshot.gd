@@ -1,7 +1,7 @@
 extends SceneTree
 ## Capture d'écran de la scène principale (nécessite un affichage). Lancement : tools/screenshot.sh
 ##
-## Arguments après `--` : chemin_png [secondes=6] [distance=16] [inclinaison=-16] [rotation=0] [--debug]
+## Arguments après `--` : chemin_png [secondes=6] [distance=16] [inclinaison=-16] [rotation=0] [--debug] [--beam-port|--beam-starboard]
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
@@ -17,6 +17,10 @@ func _initialize() -> void:
 	if args.size() > 4:
 		camera.set("_yaw_offset", deg_to_rad(float(args[4])))
 	main.get_node("ForceOverlay").visible = "--debug" in args
+	if "--beam-port" in args:
+		camera.beam_side = -1
+	elif "--beam-starboard" in args:
+		camera.beam_side = 1
 	await create_timer(seconds).timeout
 	await process_frame
 	root.get_texture().get_image().save_png(path)

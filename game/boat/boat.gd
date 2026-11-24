@@ -22,6 +22,8 @@ var wind: WindField
 
 var _time := 0.0
 var _rigging_mesh := ImmediateMesh.new()
+var _main_ease := SheetInput.new()
+var _jib_ease := SheetInput.new()
 
 @onready var _mast: Node3D = $Mast
 @onready var _boom_pivot: Node3D = $BoomPivot
@@ -83,8 +85,11 @@ func _read_controls(dt: float) -> void:
 		sim.rudder = move_toward(sim.rudder, 0.0, RUDDER_RETURN * dt)
 	sim.main_sheet = clampf(sim.main_sheet + Input.get_axis("main_in", "main_out") * SHEET_RATE * dt, 0.0, 1.0)
 	sim.jib_sheet = clampf(sim.jib_sheet + Input.get_axis("jib_in", "jib_out") * SHEET_RATE * dt, 0.0, 1.0)
-	if Input.is_action_just_pressed("jib_switch"):
-		sim.jib_side = -sim.jib_side
+	# Double appui rapide sur « choquer » : l'écoute file en grand.
+	if Input.is_action_just_pressed("main_out") and _main_ease.press(_time):
+		sim.main_sheet = 1.0
+	if Input.is_action_just_pressed("jib_out") and _jib_ease.press(_time):
+		sim.jib_sheet = 1.0
 
 
 func _apply_transform() -> void:

@@ -1,7 +1,7 @@
 shader_type spatial;
-// Eau plate stylisée : grandes taches douces et vaguelettes allongées en travers du vent,
-// qui filent sous le vent. Le motif est en coordonnées monde : le plan peut suivre le
-// bateau sans que l'eau glisse.
+// Eau plate stylisée : grandes taches douces et vaguelettes allongées en travers du vent.
+// Le motif est en coordonnées monde et ne dérive que très lentement : l'eau sert de
+// repère fixe pour sentir la vitesse et la trajectoire du bateau.
 
 uniform vec3 deep_color : source_color = vec3(0.10, 0.42, 0.58);
 uniform vec3 light_color : source_color = vec3(0.26, 0.64, 0.74);
@@ -37,7 +37,7 @@ float gnoise(vec2 p) {
 
 // Vaguelettes : coordonnées (travers, sens du vent), allongées en travers du vent.
 float ripples(vec2 q, float t) {
-	float speed = 0.6 + wind_speed * 0.12;
+	float speed = 0.05 + wind_speed * 0.015;
 	float r = gnoise(vec2(q.x * 0.22, q.y * 0.9 - t * speed));
 	r += 0.5 * gnoise(vec2(q.x * 0.5 + 3.1, q.y * 1.9 - t * speed * 1.4));
 	return r / 1.5;
@@ -53,7 +53,7 @@ void fragment() {
 	vec2 across = vec2(-wind_flow.y, wind_flow.x);
 	vec2 q = vec2(dot(p, across), dot(p, wind_flow));
 
-	float big = gnoise(p * 0.012 - wind_flow * TIME * 0.02) * 0.65 + gnoise(p * 0.04 + 7.0) * 0.35;
+	float big = gnoise(p * 0.012) * 0.65 + gnoise(p * 0.04 + 7.0) * 0.35;
 	float r = ripples(q, TIME);
 	float crest = smoothstep(0.66 - 0.05 * strength, 0.8, r) * min(strength, 1.0);
 

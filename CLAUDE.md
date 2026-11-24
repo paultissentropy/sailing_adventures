@@ -7,6 +7,10 @@ Jeu de navigation à voile semi-réaliste, 3D mignonne, rythme lent.
 - Décisions techniques et leurs raisons : [docs/decisions.md](docs/decisions.md)
 - Journal (fait, mesuré, limites connues, prochaines étapes) : [docs/journal.md](docs/journal.md)
 
+**Principe directeur** : ce n'est pas un simulateur. En cas de doute entre réalisme et
+jouabilité, choisir la jouabilité (voir `docs/vision.md`). Les comportements réalistes
+se désactivent par réglages dans `BoatParams` plutôt que d'être supprimés.
+
 **À la fin de chaque session de travail**, ajouter une entrée à `docs/journal.md`
 (discussion, réalisé, résultats, limites, suite) et une entrée à `docs/decisions.md`
 pour tout choix difficile à défaire.

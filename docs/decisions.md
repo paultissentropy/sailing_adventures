@@ -43,8 +43,9 @@ ressenti seul.
 ## 4. Le bateau : quillard de 6 m, grand-voile et foc à deux écoutes
 
 **Choix.** Un seul jeu de paramètres (`BoatParams`, unités SI). Le foc a deux
-écoutes ; après un virement, le joueur change d'écoute lui-même (Espace), comme en
-vrai. L'option `auto_jib` le fait automatiquement, pour plus tard, en mode débutant.
+écoutes. À l'origine, le joueur changeait d'écoute lui-même après un virement
+(Espace). **Depuis le 24/11/2026**, `auto_jib` est actif par défaut et le foc passe
+seul sous le vent (voir n° 11).
 
 ## 5. Touches physiques déclarées dans le code
 
@@ -84,3 +85,35 @@ images de documentation restent dans Git.
 - `tools/smoke.sh` : la scène principale tourne quelques secondes sans erreur.
 - `tools/screenshot.sh` : vraie capture d'écran, pour vérifier le rendu (shaders,
   couleurs), qu'on ne peut pas voir sans affichage.
+
+## 11. Physique simplifiée par réglages (24/11/2026)
+
+**Contexte.** Premier test : le jeu était trop « simulateur ». Les virements n'étaient
+jamais propres (le foc restait à contre), et le bateau changeait de cap tout seul.
+
+**Choix.** Les comportements réalistes ne sont pas supprimés mais désactivés par des
+réglages de `BoatParams`, pour pouvoir les réintroduire comme leçons :
+
+| Réglage | Valeur | Effet |
+|---|---|---|
+| `use_apparent_wind` | faux | les voiles ne voient que le vent réel |
+| `sail_yaw_effects` | faux | le cap ne change que par la barre |
+| `allow_leeway` | faux | pas de dérive |
+| `auto_jib` | vrai | le foc passe seul sous le vent, il n'est jamais à contre |
+
+**Deux compensations**, invisibles pour le joueur, gardent des allures crédibles sans
+vent apparent :
+- un facteur de « point de près » éteint la portance sous environ 30° du vent, ce qui
+  maintient une vraie zone vent debout ;
+- la force des voiles utilise le vent relatif au bateau : moins de pression au portant,
+  plus au près, et un arrêt bout au vent net.
+
+**Barre.** La rotation suit directement la barre, avec une vitesse qui dépend de
+l'avancement : nulle à l'arrêt, inversée en marche arrière.
+
+## 12. Interface chiffrée réservée au développement
+
+Le jeu final doit se jouer au ressenti. L'interface chiffrée (cap, vitesse, jauges,
+rose, compas de relèvement) sert pour l'instant au développement et au réglage. F2 la
+masque. Les aides visuelles sans chiffres restent affichées : lignes de vent, sillage,
+ligne de cap, girouette, forme des voiles.

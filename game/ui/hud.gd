@@ -1,19 +1,25 @@
 class_name Hud
 extends CanvasLayer
-## Interface : instruments, état des voiles, conseils et aide des touches.
+## Interface de développement : instruments, état des voiles, conseils et aide.
+## F2 masque les instruments pour naviguer au ressenti (voir docs/vision.md).
 
 const KNOT := 0.514444
 const Compass := preload("res://ui/compass.gd")
 const TrimGauges := preload("res://ui/trim_gauges.gd")
+const BearingTape := preload("res://ui/bearing_tape.gd")
 
 var boat: Boat
 var wind: WindField
 
+var _heading: Label
 var _info: Label
 var _hint: Label
 var _help: PanelContainer
 var _compass: Compass
 var _gauges: TrimGauges
+var _tape: BearingTape
+## Éléments chiffrés masqués par F2.
+var _instruments: Array[Control] = []
 
 
 func _ready() -> void:
@@ -25,16 +31,29 @@ func _ready() -> void:
 	var mono := SystemFont.new()
 	mono.font_names = PackedStringArray(["DejaVu Sans Mono", "Liberation Mono", "Menlo", "Consolas", "monospace"])
 
+	# En haut à gauche : le cap en grand, puis les autres informations.
+	var left := VBoxContainer.new()
+	left.add_theme_constant_override("separation", 8)
+	_heading = Label.new()
+	_heading.add_theme_font_override("font", mono)
+	_heading.add_theme_font_size_override("font_size", 34)
+	left.add_child(_panel(_heading))
 	_info = Label.new()
 	_info.add_theme_font_override("font", mono)
-	_info.add_theme_font_size_override("font_size", 16)
-	_place(root, _panel(_info), Control.PRESET_TOP_LEFT)
+	_info.add_theme_font_size_override("font_size", 15)
+	left.add_child(_panel(_info))
+	_place(root, left, Control.PRESET_TOP_LEFT)
+
+	_tape = BearingTape.new()
+	_place(root, _tape, Control.PRESET_CENTER_TOP)
 
 	_compass = Compass.new()
-	_place(root, _panel(_compass), Control.PRESET_TOP_RIGHT)
+	var compass_panel := _panel(_compass)
+	_place(root, compass_panel, Control.PRESET_TOP_RIGHT)
 
 	_gauges = TrimGauges.new()
-	_place(root, _panel(_gauges), Control.PRESET_BOTTOM_LEFT)
+	var gauges_panel := _panel(_gauges)
+	_place(root, gauges_panel, Control.PRESET_BOTTOM_LEFT)
 
 	var help_label := Label.new()
 	help_label.text = _help_text()
@@ -50,17 +69,29 @@ func _ready() -> void:
 	_hint.add_theme_constant_override("outline_size", 6)
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_place(root, _hint, Control.PRESET_CENTER_TOP)
+	_hint.offset_top += 100.0
+	_hint.offset_bottom += 100.0
+
+	_instruments = [left, _tape, compass_panel, gauges_panel, _hint]
 
 
-func setup(new_boat: Boat, new_wind: WindField) -> void:
+func setup(new_boat: Boat, new_wind: WindField, camera: OrbitCamera, buoys: Array[Node3D]) -> void:
 	boat = new_boat
 	wind = new_wind
 	_compass.boat = boat
 	_gauges.boat = boat
+	_tape.boat = boat
+	_tape.camera = camera
+	_tape.buoys = buoys
 
 
 func toggle_help() -> void:
 	_help.visible = not _help.visible
+
+
+func toggle_instruments() -> void:
+	for node in _instruments:
+		node.visible = not node.visible
 
 
 func _process(_delta: float) -> void:
@@ -68,16 +99,13 @@ func _process(_delta: float) -> void:
 		return
 	var sim := boat.sim
 	var twa := rad_to_deg(sim.twa())
-	var awa := rad_to_deg(sim.awa())
+	var tw := sim.true_wind
+	_heading.text = "CAP %03.0f°" % sim.bearing_deg()
 	var lines := PackedStringArray([
-		"Vitesse   %4.1f nœuds" % (sim.speed() / KNOT),
-		"Cap       %03.0f°" % sim.bearing_deg(),
-		"Allure    %s, %s" % [_point_of_sail(absf(twa)), "tribord amures" if twa > 0.0 else "bâbord amures"],
-		"Vent réel %4.1f nœuds du %03.0f°%s" % [sim.true_wind.length() / KNOT, wind.from_deg,
-			"  (risées)" if wind.gusts_enabled else ""],
-		"Vent app. %4.1f nœuds à %.0f° %s" % [sim.apparent_wind.length() / KNOT, absf(awa),
-			"tribord" if awa > 0.0 else "bâbord"],
-		"Gîte      %4.0f°" % absf(rad_to_deg(sim.heel)),
+		"Vitesse  %4.1f nœuds" % (sim.speed() / KNOT),
+		"Allure   %s, %s" % [_point_of_sail(absf(twa)), "tribord amures" if twa > 0.0 else "bâbord amures"],
+		"Vent     %4.1f nœuds du %03.0f°" % [tw.length() / KNOT, fposmod(rad_to_deg(atan2(-tw.x, tw.y)), 360.0)],
+		"Gîte     %4.0f°" % absf(rad_to_deg(sim.heel)),
 	])
 	_info.text = "\n".join(lines)
 	_hint.text = _hint_text(absf(twa))
@@ -103,14 +131,10 @@ func _point_of_sail(twa: float) -> String:
 
 func _hint_text(twa: float) -> String:
 	var sim := boat.sim
-	if sim.jib_trim() == BoatSim.Trim.BACKED:
-		return "Foc à contre : il fait abattre. %s pour changer d'écoute de foc." % Controls.key_label("jib_switch")
 	if twa < 38.0 and sim.u < 0.4:
-		return "Bout au vent : le bateau n'avance plus. Abats (foc à contre, ou barre en reculant)."
+		return "Bout au vent : le bateau n'avance plus et la barre ne répond plus."
 	if absf(sim.heel) > deg_to_rad(25.0):
-		return "Trop de gîte : choque la grand-voile ou lofe un peu."
-	if sim.speed() > 0.5 and absf(sim.u) < 0.5 * sim.speed():
-		return "Le bateau dérive : il faut de la vitesse pour que la quille porte."
+		return "Trop de gîte : choque la grand-voile."
 	return ""
 
 
@@ -119,11 +143,11 @@ func _help_text() -> String:
 		["Barre", "helm_left", "helm_right"],
 		["Grand-voile : border / choquer", "main_in", "main_out"],
 		["Foc : border / choquer", "jib_in", "jib_out"],
-		["Changer d'écoute de foc", "jib_switch", ""],
+		["Regarder par le travers Bd / Td", "look_port", "look_starboard"],
 		["Vent : tourner", "wind_left", "wind_right"],
 		["Vent : force", "wind_down", "wind_up"],
-		["Risées", "gusts_toggle", ""],
 		["Caméra suit le cap", "camera_toggle", ""],
+		["Masquer les instruments", "instruments_toggle", ""],
 		["Vecteurs de debug", "debug_toggle", ""],
 		["Replacer le bateau", "reset_boat", ""],
 		["Cacher l'aide", "help_toggle", ""],
@@ -134,6 +158,7 @@ func _help_text() -> String:
 		if row[2] != "":
 			keys += "  ·  " + Controls.key_label(row[2])
 		lines.append("%-32s %s" % [row[0], keys])
+	lines.append("Choquer deux fois vite : l'écoute file en grand")
 	lines.append("Clic + glisser : tourner la caméra · Molette : zoom")
 	return "\n".join(lines)
 

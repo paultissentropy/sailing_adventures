@@ -8,6 +8,8 @@
 [ext_resource type="Script" path="res://camera/orbit_camera.gd" id="6_camera"]
 [ext_resource type="Script" path="res://debug/force_overlay.gd" id="7_overlay"]
 [ext_resource type="Script" path="res://ui/hud.gd" id="8_hud"]
+[ext_resource type="Script" path="res://world/wake.gd" id="9_wake"]
+[ext_resource type="Script" path="res://world/wind_streaks.gd" id="10_streaks"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
 sky_top_color = Color(0.38, 0.64, 0.88, 1)
@@ -122,6 +124,15 @@ fov = 60.0
 far = 3000.0
 script = ExtResource("6_camera")
 target = NodePath("../Boat")
+
+[node name="Wake" type="MeshInstance3D" parent="." node_paths=PackedStringArray("boat")]
+script = ExtResource("9_wake")
+boat = NodePath("../Boat")
+
+[node name="WindStreaks" type="MeshInstance3D" parent="." node_paths=PackedStringArray("boat", "camera")]
+script = ExtResource("10_streaks")
+boat = NodePath("../Boat")
+camera = NodePath("../Camera")
 
 [node name="ForceOverlay" type="MeshInstance3D" parent="." node_paths=PackedStringArray("boat")]
 script = ExtResource("7_overlay")

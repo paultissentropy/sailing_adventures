@@ -1,7 +1,7 @@
 extends Control
 ## Rose du vent, vue du dessus, l'avant du bateau vers le haut.
 ## Secteur rouge : zone vent debout (on ne peut pas y faire route).
-## Flèche bleue : vent réel. Flèche cyan : vent apparent.
+## Flèche bleue : d'où vient le vent.
 
 const NO_GO_DEG := 40.0
 
@@ -52,9 +52,8 @@ func _draw() -> void:
 	var stern := c + Vector2(0, 22)
 	draw_line(stern, stern + _sail_dir(sim.rudder_angle()) * 10.0, Color(0.2, 0.2, 0.25), 3.0, true)
 
-	# Vent réel et apparent : flèches qui pointent vers le centre
+	# Vent : flèche qui pointe vers le centre, depuis son origine
 	_wind_arrow(c, radius, twa, sim.true_wind.length(), Color(0.35, 0.6, 1.0), 4.0)
-	_wind_arrow(c, radius * 0.8, sim.awa(), sim.apparent_wind.length(), Color(0.4, 1.0, 1.0), 2.5)
 
 	# Nord, vu depuis l'avant du bateau
 	draw_string(font, c + _dir(-deg_to_rad(sim.bearing_deg())) * (radius + 1.0) + Vector2(-4, 5), "N",
